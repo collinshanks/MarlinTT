@@ -586,7 +586,7 @@
 // Custom board
 //
 
-#define BOARD_TRIMBOT                 9998  // Topiary TrimBot Board
+#define BOARD_TRIMBOT_V1_0            9998  // Topiary TrimBot Board
 
 //
 // Simulations
