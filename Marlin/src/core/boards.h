@@ -586,7 +586,7 @@
 // Custom board
 //
 
-#define BOARD_CUSTOM                  9998  // Custom pins definition for development and/or rare boards
+#define BOARD_TRIMBOT                 9998  // Topiary TrimBot Board
 
 //
 // Simulations
