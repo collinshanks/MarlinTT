@@ -11,7 +11,7 @@
 //#include "../lcd/marlinui.h"
 
 // forward kinematic model
-void forward_kinematics(const float y, const float z, const float theta_b, const float theta_c) {
+void forward_kinematics(const float theta_c, const float y, const float z, const float theta_b) { // cyzb -> xyze
     cartes.x = D * sin(RADIANS(theta_c)) - sin(RADIANS(theta_c)) * (y + R_B * cos(RADIANS(theta_b)));
     cartes.y = -D * cos(RADIANS(theta_c)) + cos(RADIANS(theta_c)) * (y + R_B * cos(RADIANS(theta_b))) + D;
     cartes.z = z + R_B * sin(RADIANS(theta_b));
@@ -24,11 +24,11 @@ void home_TRIMBOT() {
 // inverse kinematic model
 void inverse_kinematics(const xyz_pos_t &raw) {
     const float theta_b = current_position[E_AXIS]; // MAPS E-AXIS TO THETA_B
-    const float y = SQRT(POW(raw.x, 2) + POW((raw.y - D), 2)) + D - R_B * cos(RADIANS(theta_b)); // NEED THETA_B AS INPUT
+    const float y = SQRT(POW(raw.x, 2) + POW((raw.y - D), 2)) + D - R_B * cos(RADIANS(theta_b));
     const float z = raw.z - R_B * sin(RADIANS(theta_b));
     const float theta_c = ATAN2(raw.x, (raw.y - D));
-    abce_float_t pos;
-    pos.set(y, z, DEGREES(theta_c), DEGREES(theta_b));
+    xyze_float_t pos;
+    pos.set(DEGREES(theta_c), y, z, DEGREES(theta_b));
 }
 
 // set axis at home function
