@@ -23,15 +23,12 @@ void home_TRIMBOT() {
 
 // inverse kinematic model
 void inverse_kinematics(const xyz_pos_t &raw) {
-    //const float x_t = raw.x, y_t = raw.y, z_t = raw.z;
-                    //theta_b = DEGREES(ATAN2(z, (y - d))),
-                    //theta_c = DEGREES(ATAN2(x_t, (y_t - D)));
-
-    const float y = SQRT(POW(x_t, 2) + POW((y_t - D), 2)) + D - R_B * cos(RADIANS(theta_b));
-    const float z = z_t - R_B * sin(RADIANS(theta_b));
-    const float theta_c = ATAN2(x_t, (y_t - D));
-    // theta_b is parameter
-    delta.set(y, z, theta_c, theta_b);
+    const float theta_b = current_position[E_AXIS]; // MAPS E-AXIS TO THETA_B
+    const float y = SQRT(POW(raw.x, 2) + POW((raw.y - D), 2)) + D - R_B * cos(RADIANS(theta_b)); // NEED THETA_B AS INPUT
+    const float z = raw.z - R_B * sin(RADIANS(theta_b));
+    const float theta_c = ATAN2(raw.x, (raw.y - D));
+    abce_float_t pos;
+    pos.set(y, z, DEGREES(theta_c), DEGREES(theta_b));
 }
 
 // set axis at home function

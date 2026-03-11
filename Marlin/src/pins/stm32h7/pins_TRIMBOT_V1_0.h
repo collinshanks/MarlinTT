@@ -30,7 +30,7 @@
 
 
 
-// NOTE: Bottom copied from pins_BTT_SKR_V3_0_common.h -> modify for trimbot board
+// NOTE: Below copied from pins_BTT_SKR_V3_0_common.h -> modify for trimbot board
 
 
 

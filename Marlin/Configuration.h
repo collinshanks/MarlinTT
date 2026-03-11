@@ -152,7 +152,7 @@
  *          TMC5130, TMC5130_STANDALONE, TMC5160, TMC5160_STANDALONE
  * :['A4988', 'A5984', 'DRV8825', 'LV8729', 'TB6560', 'TB6600', 'TMC2100', 'TMC2130', 'TMC2130_STANDALONE', 'TMC2160', 'TMC2160_STANDALONE', 'TMC2208', 'TMC2208_STANDALONE', 'TMC2209', 'TMC2209_STANDALONE', 'TMC2240', 'TMC2660', 'TMC2660_STANDALONE', 'TMC5130', 'TMC5130_STANDALONE', 'TMC5160', 'TMC5160_STANDALONE']
  */
-//#define X_DRIVER_TYPE  DRV8825
+#define X_DRIVER_TYPE  DRV8825 // turntable
 #define Y_DRIVER_TYPE  DRV8825
 #define Z_DRIVER_TYPE  DRV8825 // NO MP6603 support, TMC5160?
 //#define X2_DRIVER_TYPE A4988
@@ -161,12 +161,12 @@
 //#define Z3_DRIVER_TYPE A4988
 //#define Z4_DRIVER_TYPE A4988
 //#define I_DRIVER_TYPE  A4988
-#define J_DRIVER_TYPE  DRV8825 // wrist
-#define K_DRIVER_TYPE  DRV8825 // turntable
+//#define J_DRIVER_TYPE  A4988
+//#define K_DRIVER_TYPE  A4988
 //#define U_DRIVER_TYPE  A4988
 //#define V_DRIVER_TYPE  A4988
 //#define W_DRIVER_TYPE  A4988
-//#define E0_DRIVER_TYPE A4988
+#define E0_DRIVER_TYPE  DRV8825 // wrist
 //#define E1_DRIVER_TYPE A4988
 //#define E2_DRIVER_TYPE A4988
 //#define E3_DRIVER_TYPE A4988
@@ -221,7 +221,7 @@
 
 // This defines the number of extruders
 // :[0, 1, 2, 3, 4, 5, 6, 7, 8]
-#define EXTRUDERS 0
+#define EXTRUDERS 1
 
 // Generally expected filament diameter (1.75, 2.85, 3.0, ...). Used for Volumetric, Filament Width Sensor, etc.
 #define DEFAULT_NOMINAL_FILAMENT_DIA 1.75
@@ -1848,13 +1848,13 @@
 
 // For Inverting Stepper Enable Pins (Active Low) use 0, Non Inverting (Active High) use 1
 // :['LOW', 'HIGH']
-//define X_ENABLE_ON LOW
+#define X_ENABLE_ON LOW
 #define Y_ENABLE_ON LOW
 #define Z_ENABLE_ON LOW
-//#define E_ENABLE_ON LOW // For all extruders
+#define E_ENABLE_ON LOW // For all extruders
 //#define I_ENABLE_ON LOW
-#define J_ENABLE_ON LOW
-#define K_ENABLE_ON LOW
+//#define J_ENABLE_ON LOW
+//#define K_ENABLE_ON LOW
 //#define U_ENABLE_ON LOW
 //#define V_ENABLE_ON LOW
 //#define W_ENABLE_ON LOW
@@ -1879,12 +1879,12 @@
 // @section stepper drivers
 
 // Invert the stepper direction. Change (or reverse the motor connector) if an axis goes the wrong way.
-//#define INVERT_X_DIR false
+#define INVERT_X_DIR false
 #define INVERT_Y_DIR false
 #define INVERT_Z_DIR false
 //#define INVERT_I_DIR false
-#define INVERT_J_DIR false
-#define INVERT_K_DIR false
+//#define INVERT_J_DIR false
+//#define INVERT_K_DIR false
 //#define INVERT_U_DIR false
 //#define INVERT_V_DIR false
 //#define INVERT_W_DIR false
@@ -1921,12 +1921,12 @@
 
 // Direction of endstops when homing; 1=MAX, -1=MIN
 // :[-1,1]
-//#define X_HOME_DIR -1
+#define X_HOME_DIR -1
 #define Y_HOME_DIR -1
 #define Z_HOME_DIR -1
 //#define I_HOME_DIR -1
-#define J_HOME_DIR -1
-#define K_HOME_DIR -1
+//#define J_HOME_DIR -1
+//#define K_HOME_DIR -1
 //#define U_HOME_DIR -1
 //#define V_HOME_DIR -1
 //#define W_HOME_DIR -1
@@ -1953,18 +1953,18 @@
 #define Y_BED_SIZE 200
 
 // Travel limits (linear=mm, rotational=°) after homing, corresponding to endstop positions.
-//#define X_MIN_POS 0
+#define X_MIN_POS 0
 #define Y_MIN_POS 0
 #define Z_MIN_POS 0
-//#define X_MAX_POS X_BED_SIZE
+#define X_MAX_POS X_BED_SIZE
 #define Y_MAX_POS Y_BED_SIZE
 #define Z_MAX_POS 200
 //#define I_MIN_POS 0
 //#define I_MAX_POS 50
-#define J_MIN_POS 0
-#define J_MAX_POS 50
-#define K_MIN_POS 0
-#define K_MAX_POS 50
+//#define J_MIN_POS 0
+//#define J_MAX_POS 50
+//#define K_MIN_POS 0
+//#define K_MAX_POS 50
 //#define U_MIN_POS 0
 //#define U_MAX_POS 50
 //#define V_MIN_POS 0
