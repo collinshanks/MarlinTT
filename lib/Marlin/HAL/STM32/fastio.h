@@ -21,6 +21,8 @@
  */
 #pragma once
 
+#include "stm32f4xx.h"
+
 /**
  * Fast I/O interfaces for STM32
  * These use GPIO register access for fast port manipulation.

@@ -50,6 +50,8 @@ public:
 #if ENABLED(CONFIGURABLE_MACHINE_NAME)
     static MString<64> machine_name;
 #endif
+    static void setup();
+    static void loop();
 
     static MarlinState state;
     static void setState(const MarlinState s) { state = s; }

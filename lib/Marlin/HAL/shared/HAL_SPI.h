@@ -84,7 +84,7 @@ void spiBeginTransaction(uint32_t spiClock, uint8_t bitOrder, uint8_t dataMode);
 //
 
 // Write single byte to specified SPI channel
-void spiSend(uint32_t chan, byte b);
+void spiSend(uint32_t chan, uint8_t b);
 
 // Write buffer to specified SPI channel
 void spiSend(uint32_t chan, const uint8_t *buf, size_t n);

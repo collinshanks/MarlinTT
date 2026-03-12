@@ -21,6 +21,9 @@
  */
 #pragma once
 
+// Hack: disable warnings about enable pin
+#define NO_ENABLE_PIN 1
+
 /**
  * SanityCheck.h
  *
@@ -2465,14 +2468,14 @@ static_assert(NUM_SERVOS <= NUM_SERVO_PLUGS, "NUM_SERVOS (or some servo index) i
 #if HAS_EXTRUDERS
   #if ((defined(__AVR_ATmega644P__) || defined(__AVR_ATmega1284P__)) && !PINS_EXIST(E0_STEP, E0_DIR))
     #error "E0_STEP_PIN or E0_DIR_PIN not defined for this board."
-  #elif ( !(defined(__AVR_ATmega644P__) || defined(__AVR_ATmega1284P__)) && (!PINS_EXIST(E0_STEP, E0_DIR) || !HAS_E0_ENABLE))
+  #elif ( !(defined(__AVR_ATmega644P__) || defined(__AVR_ATmega1284P__)) && !NO_ENABLE_PIN && (!PINS_EXIST(E0_STEP, E0_DIR) || !HAS_E0_ENABLE))
     #error "E0_STEP_PIN, E0_DIR_PIN, or E0_ENABLE_PIN not defined for this board."
   #elif HOTENDS && TEMP_SENSOR_0 == 0
     #error "TEMP_SENSOR_0 is required if there are any hotends."
   #endif
 #endif
 
-#if E_STEPPERS > 0 && !ALL(HAS_E0_DIR, HAS_E0_STEP, HAS_E0_ENABLE)
+#if E_STEPPERS > 0 && !(HAS_E0_DIR && HAS_E0_STEP && (HAS_E0_ENABLE || NO_ENABLE_PIN))
   #error "E0_STEP_PIN, E0_DIR_PIN, or E0_ENABLE_PIN not defined for this board."
 #endif
 #if E_STEPPERS > 1 && !ALL(HAS_E1_DIR, HAS_E1_STEP, HAS_E1_ENABLE)

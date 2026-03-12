@@ -59,20 +59,6 @@
 #include "gcode/queue.h"
 
 #include "feature/pause.h"
-#include "sd/cardreader.h"
-
-#include "lcd/marlinui.h"
-#if HAS_TOUCH_BUTTONS
-  #include "lcd/touch/touch_buttons.h"
-#endif
-
-#if HAS_TFT_LVGL_UI
-  #include "lcd/extui/mks_ui/tft_lvgl_configuration.h"
-  #include "lcd/extui/mks_ui/draw_ui.h"
-  #include "lcd/extui/mks_ui/mks_hardware.h"
-  #include <lvgl.h>
-#endif
-
 #if HAS_DWIN_E3V2
   #include "lcd/dwin/common/encoder.h"
   #if ENABLED(DWIN_CREALITY_LCD)
@@ -264,16 +250,18 @@
   #include "feature/e_parser.h"
 #endif
 
+#include "timing.h"
+
 /**
  * Spin in place here while keeping temperature processing alive
  */
 void safe_delay(millis_t ms) {
   while (ms > 50) {
     ms -= 50;
-    delay(50);
+    delay_ms(50);
     thermalManager.task();
   }
-  delay(ms);
+  delay_ms(ms);
   thermalManager.task(); // This keeps us safe if too many small safe_delay() calls are made
 }
 
@@ -290,10 +278,6 @@ MarlinState Marlin::state = MF_INITIALIZING;
 
 // For M109 and M190, this flag may be cleared (by M108) to exit the wait loop
 bool Marlin::wait_for_heatup = false;
-
-#if !HAS_MEDIA
-  CardReader card; // Stub instance with "no media" methods
-#endif
 
 PGMSTR(M112_KILL_STR, "M112 Shutdown");
 
@@ -356,7 +340,7 @@ bool Marlin::printer_busy() {
 /**
  * A Print Job exists when the timer is running or SD is printing
  */
-bool Marlin::printJobOngoing() { return print_job_timer.isRunning() || card.isStillPrinting(); }
+bool Marlin::printJobOngoing() { return print_job_timer.isRunning(); }
 
 /**
  * Printing is active when a job is underway but not paused
@@ -367,7 +351,7 @@ bool Marlin::printingIsActive() { return !did_pause_print && printJobOngoing(); 
  * Printing is paused according to SD or host indicators
  */
 bool Marlin::printingIsPaused() {
-  return did_pause_print || print_job_timer.isPaused() || card.isPaused();
+  return did_pause_print || print_job_timer.isPaused();
 }
 
 void Marlin::startOrResumeJob() {
@@ -434,7 +418,7 @@ void Marlin::manage_inactivity(const bool no_stepper_sleep/*=false*/) {
 
   queue.get_available_commands();
 
-  const millis_t ms = millis();
+  const millis_t ms = get_tick_ms();
 
   // Prevent steppers timing-out
   const bool do_reset_timeout = no_stepper_sleep
@@ -853,13 +837,6 @@ void Marlin::idle(const bool no_stepper_sleep/*=false*/) {
   // Update the Beeper queue
   TERN_(HAS_BEEPER, buzzer.tick());
 
-  // Handle UI input / draw events
-  #if ENABLED(SOVOL_SV06_RTS)
-    RTS_Update();
-  #else
-    ui.update();
-  #endif
-
   // Run i2c Position Encoders
   #if ENABLED(I2C_POSITION_ENCODERS)
   {
@@ -1004,7 +981,6 @@ void Marlin::stop() {
 
   if (!isStopped()) {
     SERIAL_ERROR_MSG(STR_ERR_STOPPED);
-    LCD_MESSAGE(MSG_STOPPED);
     safe_delay(350);         // Allow enough time for messages to get out before stopping
     setState(MF_STOPPED);
   }
@@ -1166,7 +1142,7 @@ inline void tmc_standby_setup() {
  *  - Open Touch Screen Calibration screen, if not calibrated
  *  - Set Marlin to RUNNING State
  */
-void setup() {
+void Marlin::setup() {
   #ifdef FASTIO_INIT
     FASTIO_INIT();
   #endif
@@ -1178,7 +1154,7 @@ void setup() {
   tmc_standby_setup();  // TMC Low Power Standby pins must be set early or they're not usable
 
   // Check startup - does nothing if bootloader sets MCUSR to 0
-  const byte mcu = hal.get_reset_source();
+  const uint8_t mcu = hal.get_reset_source();
   hal.clear_reset_source();
 
   #if ENABLED(MARLIN_DEV_MODE)
@@ -1194,13 +1170,13 @@ void setup() {
   #define SETUP_RUN(C) do{ SETUP_LOG(STRINGIFY(C)); C; }while(0)
 
   MYSERIAL1.begin(BAUDRATE);
-  millis_t serial_connect_timeout = millis() + 1000UL;
-  while (!MYSERIAL1.connected() && PENDING(millis(), serial_connect_timeout)) { /*nada*/ }
+  millis_t serial_connect_timeout = get_tick_ms() + 1000UL;
+  while (!MYSERIAL1.connected() && PENDING(get_tick_ms(), serial_connect_timeout)) { /*nada*/ }
 
   #if ENABLED(SOVOL_SV06_RTS)
     LCD_SERIAL.begin(BAUDRATE);
-    serial_connect_timeout = millis() + 1000UL;
-    while (!LCD_SERIAL.connected() && PENDING(millis(), serial_connect_timeout)) { /*nada*/ }
+    serial_connect_timeout = get_tick_ms() + 1000UL;
+    while (!LCD_SERIAL.connected() && PENDING(get_tick_ms(), serial_connect_timeout)) { /*nada*/ }
   #endif
 
   #if HAS_MULTI_SERIAL && !HAS_ETHERNET
@@ -1208,15 +1184,15 @@ void setup() {
       #define BAUDRATE_2 BAUDRATE
     #endif
     MYSERIAL2.begin(BAUDRATE_2);
-    serial_connect_timeout = millis() + 1000UL;
-    while (!MYSERIAL2.connected() && PENDING(millis(), serial_connect_timeout)) { /*nada*/ }
+    serial_connect_timeout = get_tick_ms() + 1000UL;
+    while (!MYSERIAL2.connected() && PENDING(get_tick_ms(), serial_connect_timeout)) { /*nada*/ }
     #ifdef SERIAL_PORT_3
       #ifndef BAUDRATE_3
         #define BAUDRATE_3 BAUDRATE
       #endif
       MYSERIAL3.begin(BAUDRATE_3);
-      serial_connect_timeout = millis() + 1000UL;
-      while (!MYSERIAL3.connected() && PENDING(millis(), serial_connect_timeout)) { /*nada*/ }
+      serial_connect_timeout = get_tick_ms() + 1000UL;
+      while (!MYSERIAL3.connected() && PENDING(get_tick_ms(), serial_connect_timeout)) { /*nada*/ }
     #endif
   #endif
   SERIAL_ECHOLNPGM("start");
@@ -1357,14 +1333,6 @@ void setup() {
   #endif
 
   TERN_(HAS_FANCHECK, fan_check.init());
-
-  // UI must be initialized before EEPROM
-  // (because EEPROM code calls the UI).
-  #if ENABLED(SOVOL_SV06_RTS)
-    SETUP_RUN(RTS_Update());
-  #else
-    SETUP_RUN(ui.init());
-  #endif
 
   #if PIN_EXISTS(SAFE_POWER)
     #if HAS_DRIVER_SAFE_POWER_PROTECT
@@ -1745,7 +1713,7 @@ void setup() {
  *    card, host, or by direct injection. The queue will continue to fill
  *    as long as idle() or manage_inactivity() are being called.
  */
-void loop() {
+void Marlin::loop() {
   do {
     marlin.idle();
 

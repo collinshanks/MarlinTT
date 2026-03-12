@@ -74,7 +74,7 @@ MAP(_N_LBL, LOGICAL_AXIS_NAMES); MAP(_SP_N_LBL, LOGICAL_AXIS_NAMES);
 // Specializations for float, p_float_t, w_float_t
 template <> void SERIAL_ECHO(const float f)      { SERIAL_IMPL.print(f, SERIAL_FLOAT_PRECISION); }
 template <> void SERIAL_ECHO(const p_float_t pf) { SERIAL_IMPL.print(pf.value, pf.prec); }
-template <> void SERIAL_ECHO(const w_float_t wf) { char f1[20]; SERIAL_IMPL.print(dtostrf(wf.value, wf.width, wf.prec, f1)); }
+template <> void SERIAL_ECHO(const w_float_t wf) { char f1[20]; SERIAL_IMPL.print(snprintf("%*.*f", sizeof(f1), f1, wf.width, wf.prec, wf.value)); }
 
 // Specializations for F-string
 template <> void SERIAL_ECHO(FSTR_P const fstr)   { SERIAL_ECHO_P(FTOP(fstr)); }

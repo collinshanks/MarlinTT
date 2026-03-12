@@ -78,11 +78,16 @@
   #define CONTROLLER_WARNING(...)
 #endif
 
+// Topiary Trimbot
+// #if MB(TRIMBOT)
+#if _MB_1(TRIMBOT)
+  #include "board.h"
+
 //
 // RAMPS 1.3 / 1.4 / 1.6+ - ATmega1280, ATmega2560
 //
 
-#if MB(RAMPS_OLD)
+#elif MB(RAMPS_OLD)
   #include "ramps/pins_RAMPS_OLD.h"                 // ATmega2560, ATmega1280               env:mega2560 env:mega1280
 #elif MB(RAMPS_13_EFB, RAMPS_13_EEB, RAMPS_13_EFF, RAMPS_13_EEF, RAMPS_13_SF)
   #include "ramps/pins_RAMPS_13.h"                  // ATmega2560, ATmega1280               env:mega2560 env:mega1280

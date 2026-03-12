@@ -23,6 +23,7 @@
 
 #define XSTR(V...) #V
 
+#define HAL_STM32
 // clang-format off
 #define HAL_PATH(PATH, NAME) XSTR(PATH/HAL/STM32/NAME)
 // clang-format on
