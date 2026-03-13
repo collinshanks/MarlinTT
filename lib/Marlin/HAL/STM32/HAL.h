@@ -43,8 +43,6 @@
 // Serial Ports
 //
 
-#include "MarlinSerial.h"
-
 /**
  * TODO: review this to return 1 for pins that are not analog input
  */
