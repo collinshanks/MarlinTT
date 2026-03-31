@@ -22,7 +22,6 @@
 
 #include "../gcode.h"
 #include "../../module/planner.h"
-#include "../../lcd/marlinui.h"
 
 /**
  * G4: Dwell S<seconds> or P<milliseconds>
@@ -39,7 +38,6 @@ void GcodeSuite::G4() {
   #endif
 
   if (dwell_ms) {
-    if (!ui.has_status()) LCD_MESSAGE(MSG_DWELL);
     dwell(dwell_ms);
   }
 }

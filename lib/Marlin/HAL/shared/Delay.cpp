@@ -21,6 +21,7 @@
  */
 
 #include "Delay.h"
+#include "timing.h"
 
 #include "../../inc/MarlinConfig.h"
 
@@ -72,9 +73,9 @@
       ASM_CYCLES_PER_ITERATION = 1;
       // We need to fetch some reference clock before waiting
       cli();
-        uint32_t start = micros();
+        uint32_t start = get_tick_ms()*1000;
         delay_asm(1000); // On a typical CPU running in MHz, waiting 1000 "unknown cycles" means it'll take between 1ms to 6ms, that's perfectly acceptable
-        uint32_t end = micros();
+        uint32_t end = get_tick_ms()*1000;
       sei();
       uint32_t expectedCycles = (end - start) * ((F_CPU) / 1000000UL); // Convert microseconds to cycles
       // Finally compute the right scale

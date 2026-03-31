@@ -282,7 +282,7 @@ public:
   // Reduce to fewer bits
   static int16_t value_int() { return (int16_t)value_long(); }
   static uint16_t value_ushort() { return (uint16_t)value_ulong(); }
-  static uint8_t value_byte() { return (uint8_t)constrain(value_long(), 0, 255); }
+  static uint8_t value_byte() { return (uint8_t)(value_long() < 0 ? 0 : (value_long() > 255 ? 255 : value_long())); }
 
   // Bool is true with no value or non-zero
   static bool value_bool() { return !has_value() || !!value_byte(); }

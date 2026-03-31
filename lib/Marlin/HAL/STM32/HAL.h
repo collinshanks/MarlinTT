@@ -26,11 +26,10 @@
 #include "../../inc/MarlinConfigPre.h"
 
 #include "../shared/math_32bit.h"
-#include "../shared/HAL_SPI.h"
 #include "temp_soc.h"
 #include "fastio.h"
 
-#include "stm32f4xx_hal.h"
+#include "stm32h7xx_hal.h"
 
 //
 // Default graphical display delays

@@ -35,6 +35,7 @@ GcodeSuite gcode;
 #include "parser.h"
 #include "queue.h"
 #include "../module/motion.h"
+#include "timing.h"
 
 #if ENABLED(PRINTCOUNTER)
   #include "../module/printcounter.h"
@@ -251,8 +252,8 @@ void GcodeSuite::get_destination_from_command() {
  * Dwell waits immediately. It does not synchronize.
  */
 void GcodeSuite::dwell(const millis_t time) {
-  const millis_t start_ms = millis();
-  while (PENDING(millis(), start_ms, time)) marlin.idle();
+  const millis_t start_ms = get_tick_ms();
+  while (PENDING(get_tick_ms(), start_ms, time)) marlin.idle();
 }
 
 /**
@@ -1185,8 +1186,6 @@ void GcodeSuite::process_parsed_command(bool no_ok/*=false*/) {
   }
 
   if (!no_ok) queue.ok_to_send();
-
-  SERIAL_IMPL.msgDone(); // Call the msgDone serial hook to signal command processing done
 }
 
 #if ENABLED(M100_FREE_MEMORY_DUMPER)
@@ -1199,8 +1198,6 @@ void GcodeSuite::process_parsed_command(bool no_ok/*=false*/) {
  */
 void GcodeSuite::process_next_command() {
   GCodeQueue::CommandLine &command = queue.ring_buffer.peek_next_command();
-
-  PORT_REDIRECT(SERIAL_PORTMASK(command.port));
 
   TERN_(POWER_LOSS_RECOVERY, recovery.queue_index_r = queue.ring_buffer.index_r);
 
@@ -1264,11 +1261,10 @@ void GcodeSuite::process_subcommands_now(char * gcode) {
    * while the machine is not accepting commands.
    */
   void GcodeSuite::host_keepalive() {
-    const millis_t ms = millis();
+    const millis_t ms = get_tick_ms();
     static millis_t next_busy_signal_ms = 0;
     if (!autoreport_paused && host_keepalive_interval && busy_state != NOT_BUSY) {
       if (PENDING(ms, next_busy_signal_ms)) return;
-      PORT_REDIRECT(SerialMask::All);
       switch (busy_state) {
         case IN_HANDLER:
         case IN_PROCESS:

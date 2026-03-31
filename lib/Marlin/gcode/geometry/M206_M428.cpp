@@ -26,7 +26,6 @@
 
 #include "../gcode.h"
 #include "../../module/motion.h"
-#include "../../lcd/marlinui.h"
 #include "../../libs/buzzer.h"
 
 /**
@@ -88,7 +87,6 @@ void GcodeSuite::M428() {
       diff[i] = -current_position[i];
     if (!WITHIN(diff[i], -20, 20)) {
       SERIAL_ERROR_MSG(STR_ERR_M428_TOO_FAR);
-      LCD_ALERTMESSAGE(MSG_ERR_M428_TOO_FAR);
       ERR_BUZZ();
       return;
     }
@@ -96,7 +94,6 @@ void GcodeSuite::M428() {
 
   LOOP_NUM_AXES(i) set_home_offset((AxisEnum)i, diff[i]);
   report_current_position();
-  LCD_MESSAGE(MSG_HOME_OFFSETS_APPLIED);
   OKAY_BUZZ();
 }
 

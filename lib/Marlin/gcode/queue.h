@@ -27,6 +27,7 @@
  */
 
 #include "../inc/MarlinConfig.h"
+#include "string.h"
 
 class GCodeQueue {
 public:
@@ -136,7 +137,8 @@ public:
    * Aborts the current SRAM queue so only use for one or two commands.
    */
   static void inject(const char * const gcode) {
-    strlcpy(injected_commands, gcode, sizeof(injected_commands));
+    strncpy(injected_commands, gcode, sizeof(injected_commands)-1);
+    injected_commands[sizeof(injected_commands)-1] = '\0';
   }
 
   /**

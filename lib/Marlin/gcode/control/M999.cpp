@@ -22,7 +22,6 @@
 
 #include "../gcode.h"
 
-#include "../../lcd/marlinui.h" // for ui.reset_alert_level
 #include "../../MarlinCore.h"   // for setState
 #include "../queue.h"           // for flush_and_request_resend
 
@@ -37,7 +36,6 @@
  */
 void GcodeSuite::M999() {
   marlin.setState(MF_RUNNING);
-  ui.reset_alert_level();
 
   if (parser.boolval('S')) return;
 

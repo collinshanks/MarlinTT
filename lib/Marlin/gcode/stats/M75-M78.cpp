@@ -17,12 +17,11 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *
+ *LCD
  */
 
 #include "../gcode.h"
 #include "../../module/printcounter.h"
-#include "../../lcd/marlinui.h"
 #if ENABLED(HOST_PAUSE_M76)
   #include "../../feature/host_actions.h"
 #endif

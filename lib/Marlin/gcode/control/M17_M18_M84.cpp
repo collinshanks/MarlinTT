@@ -22,7 +22,6 @@
 
 #include "../gcode.h"
 #include "../../MarlinCore.h" // for stepper_inactive_time, disable_e_steppers
-#include "../../lcd/marlinui.h"
 #include "../../module/motion.h" // for e_axis_mask
 #include "../../module/planner.h"
 #include "../../module/stepper.h"
@@ -137,7 +136,6 @@ void GcodeSuite::M17() {
     }
   }
   else {
-    LCD_MESSAGE(MSG_NO_MOVE);
     stepper.enable_all_steppers();
   }
 }

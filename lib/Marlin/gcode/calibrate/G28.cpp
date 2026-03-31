@@ -56,8 +56,6 @@
   #include "../../module/ft_motion.h"
 #endif
 
-#include "../../lcd/marlinui.h"
-
 #if ENABLED(EXTENSIBLE_UI)
   #include "../../lcd/extui/ui_api.h"
 #elif ENABLED(DWIN_CREALITY_LCD)
@@ -571,8 +569,6 @@ void GcodeSuite::G28() {
       SERIAL_ECHOLNPGM(STR_Z_MOVE_COMP);
 
   #endif // NUM_AXES
-
-  ui.refresh();
 
   TERN_(SOVOL_SV06_RTS, RTS_MoveAxisHoming());
   TERN_(DWIN_CREALITY_LCD, dwinHomingDone());

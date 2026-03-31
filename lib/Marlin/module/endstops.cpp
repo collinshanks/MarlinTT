@@ -27,10 +27,6 @@
 #include "endstops.h"
 #include "stepper.h"
 
-#if ANY(HAS_STATUS_MESSAGE, VALIDATE_HOMING_ENDSTOPS)
-  #include "../lcd/marlinui.h"
-#endif
-
 #if ENABLED(SOVOL_SV06_RTS)
   #include "../lcd/sovol_rts/sovol_rts.h"
 #endif

@@ -77,8 +77,8 @@
   #define MCU_STEP_TIMER  9           // STM32F401 has no TIM6, TIM7, or TIM8
   #define MCU_TEMP_TIMER 10
 #elif defined(STM32F4xx) || defined(STM32F7xx) || defined(STM32H7xx)
-  #define MCU_STEP_TIMER  6
-  #define MCU_TEMP_TIMER 14           // TIM7 is consumed by Software Serial if used.
+  #define MCU_STEP_TIMER  4
+  #define MCU_TEMP_TIMER  6
 #endif
 
 #ifndef STEP_TIMER
@@ -103,7 +103,7 @@
 // Private Variables
 // --------------------------------------------------------------------------
 
-HardwareTimer *timer_instance[NUM_HARDWARE_TIMERS] = { nullptr };
+TIM_HandleTypeDef timer_instance[NUM_HARDWARE_TIMERS] = {{}, {}};
 
 // ------------------------
 // Public functions
@@ -112,7 +112,16 @@ HardwareTimer *timer_instance[NUM_HARDWARE_TIMERS] = { nullptr };
 uint32_t GetStepperTimerClkFreq() {
   // Timer input clocks vary between devices, and in some cases between timers on the same device.
   // Retrieve at runtime to ensure device compatibility. Cache result to avoid repeated overhead.
-  static uint32_t clkfreq = timer_instance[MF_TIMER_STEP]->getTimerClkFreq();
+  uint32_t clkfreq = 0;
+  #if (STEP_TIMER == 4)
+    clkfreq = HAL_RCC_GetPCLK1Freq();
+    // Double if APB1 prescaler is not 1
+    if ((RCC->D2CFGR & RCC_D2CFGR_D2PPRE1) != RCC_D2CFGR_D2PPRE1_DIV1) {
+      clkfreq *= 2;
+    }
+  #else
+  #error "Change the timer get freq"
+  #endif
   return clkfreq;
 }
 
@@ -121,7 +130,14 @@ void HAL_timer_start(const uint8_t timer_num, const uint32_t frequency) {
   if (!HAL_timer_initialized(timer_num)) {
     switch (timer_num) {
       case MF_TIMER_STEP: // STEPPER TIMER - use a 32bit timer if possible
-        timer_instance[timer_num] = new HardwareTimer(STEP_TIMER_DEV);
+        timer_instance[timer_num].Instance = STEP_TIMER_DEV;
+        #if (STEP_TIMER == 4)
+        __HAL_RCC_TIM4_CLK_ENABLE();
+        NVIC_SetPriority(TIM4_IRQn, STEP_TIMER_IRQ_PRIO);
+        NVIC_EnableIRQ(TIM4_IRQn);
+        #else
+        #error "Change the timer clock init"
+        #endif
         /* Set the prescaler to the final desired value.
          * This will change the effective ISR callback frequency but when
          * HAL_timer_start(timer_num=0) is called in the core for the first time
@@ -136,58 +152,69 @@ void HAL_timer_start(const uint8_t timer_num, const uint32_t frequency) {
          * (for example when steppers are turned on)
          */
 
-        timer_instance[timer_num]->setPrescaleFactor(STEPPER_TIMER_PRESCALE); //the -1 is done internally
-        timer_instance[timer_num]->setOverflow(_MIN(HAL_TIMER_TYPE_MAX, hal_timer_t((HAL_TIMER_RATE) / (STEPPER_TIMER_PRESCALE) /* / frequency */)), TICK_FORMAT);
+        timer_instance[timer_num].Init.Prescaler = STEPPER_TIMER_PRESCALE - 1;
+        timer_instance[timer_num].Init.CounterMode = TIM_COUNTERMODE_UP;
+        timer_instance[timer_num].Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+        timer_instance[timer_num].Init.Period = _MIN(HAL_TIMER_TYPE_MAX, hal_timer_t((HAL_TIMER_RATE) / (STEPPER_TIMER_PRESCALE) / frequency)) - 1;
+        timer_instance[timer_num].Init.RepetitionCounter = 0;
         break;
       case MF_TIMER_TEMP: // TEMP TIMER - any available 16bit timer
-        timer_instance[timer_num] = new HardwareTimer(TEMP_TIMER_DEV);
-        // The prescale factor is computed automatically for HERTZ_FORMAT
-        timer_instance[timer_num]->setOverflow(frequency, HERTZ_FORMAT);
+        #if (TEMP_TIMER == 6)
+        __HAL_RCC_TIM6_CLK_ENABLE();
+        NVIC_SetPriority(TIM6_DAC_IRQn, TEMP_TIMER_IRQ_PRIO);
+        NVIC_EnableIRQ(TIM6_DAC_IRQn);
+        #else
+        #error "Change the timer clock init"
+        #endif
+        timer_instance[timer_num].Instance = TEMP_TIMER_DEV;
+
+        timer_instance[timer_num].Init.Prescaler = STEPPER_TIMER_PRESCALE - 1;
+        timer_instance[timer_num].Init.CounterMode = TIM_COUNTERMODE_UP;
+        timer_instance[timer_num].Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+        timer_instance[timer_num].Init.Period = _MIN(HAL_TIMER_TYPE_MAX, hal_timer_t((HAL_TIMER_RATE) / (STEPPER_TIMER_PRESCALE) / frequency)) - 1;
+        timer_instance[timer_num].Init.RepetitionCounter = 0;
         break;
     }
 
     // Disable preload. Leaving it default-enabled can cause the timer to stop if it happens
     // to exit the ISR after the start time for the next interrupt has already passed.
-    timer_instance[timer_num]->setPreloadEnable(false);
+    timer_instance[timer_num].Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
 
     HAL_timer_enable_interrupt(timer_num);
 
     // Start the timer.
-    timer_instance[timer_num]->resume(); // First call to resume() MUST follow the attachInterrupt()
-
-    // This is fixed in Arduino_Core_STM32 1.8.
-    // These calls can be removed and replaced with
-    // timer_instance[timer_num]->setInterruptPriority
-    switch (timer_num) {
-      case MF_TIMER_STEP:
-        timer_instance[timer_num]->setInterruptPriority(STEP_TIMER_IRQ_PRIO, 0);
-        break;
-      case MF_TIMER_TEMP:
-        timer_instance[timer_num]->setInterruptPriority(TEMP_TIMER_IRQ_PRIO, 0);
-        break;
-    }
+    HAL_TIM_Base_Start_IT(&timer_instance[timer_num]);
   }
 }
 
 void HAL_timer_enable_interrupt(const uint8_t timer_num) {
-  if (HAL_timer_initialized(timer_num) && !timer_instance[timer_num]->hasInterrupt()) {
-    switch (timer_num) {
-      case MF_TIMER_STEP:
-        timer_instance[timer_num]->attachInterrupt(Step_Handler);
-        break;
-      case MF_TIMER_TEMP:
-        timer_instance[timer_num]->attachInterrupt(Temp_Handler);
-        break;
-    }
+  if (HAL_timer_initialized(timer_num) && !HAL_timer_interrupt_enabled(timer_num)) {
+    __HAL_TIM_ENABLE_IT(&timer_instance[timer_num], TIM_IT_UPDATE);
   }
 }
 
 void HAL_timer_disable_interrupt(const uint8_t timer_num) {
-  if (HAL_timer_initialized(timer_num)) timer_instance[timer_num]->detachInterrupt();
+  __HAL_TIM_DISABLE_IT(&timer_instance[timer_num], TIM_IT_UPDATE);
 }
 
 bool HAL_timer_interrupt_enabled(const uint8_t timer_num) {
-  return HAL_timer_initialized(timer_num) && timer_instance[timer_num]->hasInterrupt();
+  switch (timer_num) {
+    case MF_TIMER_STEP:
+      #if (STEP_TIMER == 4)
+      return HAL_timer_initialized(timer_num) && NVIC_GetEnableIRQ(TIM4_IRQn);
+      #else
+      #error "Change the timer IRQ is enabled check"
+      #endif
+      break;
+    case MF_TIMER_TEMP:
+      #if (TEMP_TIMER == 6)
+      return HAL_timer_initialized(timer_num) && NVIC_GetEnableIRQ(TIM6_DAC_IRQn);
+      #else
+      #error "Change the timer IRQ is enabled check"
+      #endif
+      break;
+  }
+  return false;
 }
 
 void SetTimerInterruptPriorities() {
@@ -322,5 +349,20 @@ static constexpr bool verify_no_timer_conflicts() {
 // If default_envs is defined properly in platformio.ini, VS Code can evaluate the array
 // when hovering over it, making it easy to identify the conflicting timers.
 static_assert(verify_no_timer_conflicts(), "One or more timer conflict detected. Examine \"timers_in_use\" to help identify conflict.");
+
+extern "C" {
+  void TIM4_IRQHandler();
+  void TIM6_DAC_IRQHandler();
+}
+
+void TIM4_IRQHandler() {
+  HAL_TIM_IRQHandler(&timer_instance[MF_TIMER_STEP]);
+  Step_Handler();
+}
+
+void TIM6_DAC_IRQHandler() {
+  HAL_TIM_IRQHandler(&timer_instance[MF_TIMER_TEMP]);
+  Temp_Handler();
+}
 
 #endif // HAL_STM32

@@ -26,12 +26,6 @@
 #include "../../inc/MarlinConfig.h"
 #include "../shared/Delay.h"
 
-#include "usb_serial.h"
-
-#ifdef USBCON
-DefaultSerial1 MSerialUSB(false, SerialUSB);
-#endif
-
 #if ENABLED(SRAM_EEPROM_EMULATION)
 #if STM32F7xx
 #include <stm32f7xx_ll_pwr.h>
@@ -64,41 +58,11 @@ void MarlinHAL::init() {
     constexpr unsigned int cpuFreq = F_CPU;
     UNUSED(cpuFreq);
 
-#if HAS_MEDIA && DISABLED(ONBOARD_SDIO) && PIN_EXISTS(SD_SS)
-    OUT_WRITE(
-        SD_SS_PIN,
-        HIGH);  // Try to set SDSS inactive before any other SPI users start up
-#endif
-
 #if PIN_EXISTS(LED)
     OUT_WRITE(LED_PIN, LOW);
 #endif
 
-#if ENABLED(SRAM_EEPROM_EMULATION)
-    __HAL_RCC_PWR_CLK_ENABLE();
-    HAL_PWR_EnableBkUpAccess();  // Enable access to backup SRAM
-    __HAL_RCC_BKPSRAM_CLK_ENABLE();
-    LL_PWR_EnableBkUpRegulator();  // Enable backup regulator
-    while (!LL_PWR_IsActiveFlag_BRR())
-        ;  // Wait until backup regulator is initialized
-#endif
-
     SetTimerInterruptPriorities();
-
-#if ENABLED(EMERGENCY_PARSER) && ANY(USBD_USE_CDC, USBD_USE_CDC_MSC)
-    USB_Hook_init();
-#endif
-
-    TERN_(POSTMORTEM_DEBUGGING,
-          install_min_serial());  // Install the min serial handler
-
-    TERN_(HAS_SD_HOST_DRIVE, MSC_SD_init());  // Enable USB SD card access
-
-#if PIN_EXISTS(USB_CONNECT)
-    OUT_WRITE(USB_CONNECT_PIN, !USB_CONNECT_INVERTING);  // USB clear connection
-    delay_ms(1000);  // Give OS time to notice
-    WRITE(USB_CONNECT_PIN, USB_CONNECT_INVERTING);
-#endif
 }
 
 // HAL idle task

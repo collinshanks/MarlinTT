@@ -72,7 +72,6 @@
 #if ENABLED(FT_MOTION)
   #include "ft_motion.h"
 #endif
-#include "../lcd/marlinui.h"
 #include "../gcode/parser.h"
 
 #include "../MarlinCore.h"

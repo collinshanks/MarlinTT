@@ -84,7 +84,7 @@ class __FlashStringHelper;
 #define strlcat_P(dest, src, len) strlcat((dest), (src), (len))
 #endif
 #ifndef strlcpy_P
-#define strlcpy_P(dest, src, len) strlcpy((dest), (src), (len))
+#define strlcpy_P(dest, src, len) do{strncpy((dest), (src), (len-1)); (dest)[(len-1)] = '\0'; } while(0)
 #endif
 #ifndef strlen_P
 #define strlen_P(s) strlen((const char *)(s))

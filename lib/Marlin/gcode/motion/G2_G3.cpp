@@ -28,6 +28,7 @@
 #include "../../module/motion.h"
 #include "../../module/planner.h"
 #include "../../module/temperature.h"
+#include "timing.h"
 
 #if N_ARC_CORRECTION < 1
   #undef N_ARC_CORRECTION
@@ -299,7 +300,7 @@ void plan_arc(
       raw.e       = start_E
     );
 
-    millis_t next_idle_ms = millis() + 200UL;
+    millis_t next_idle_ms = get_tick_ms() + 200UL;
 
     #if N_ARC_CORRECTION > 1
       int8_t arc_recalc_count = N_ARC_CORRECTION;
@@ -318,7 +319,7 @@ void plan_arc(
     for (uint16_t i = 1; i < segments; i++) { // Iterate (segments-1) times
 
       thermalManager.task();
-      const millis_t ms = millis();
+      const millis_t ms = get_tick_ms();
       if (ELAPSED(ms, next_idle_ms)) {
         next_idle_ms = ms + 200UL;
         marlin.idle();

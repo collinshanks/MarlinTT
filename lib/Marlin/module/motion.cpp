@@ -30,8 +30,8 @@
 #include "planner.h"
 #include "temperature.h"
 #include "../gcode/gcode.h"
-#include "../lcd/marlinui.h"
 #include "../inc/MarlinConfig.h"
+#include "timing.h"
 
 #if IS_SCARA
   #include "../libs/buzzer.h"
@@ -1424,7 +1424,7 @@ void restore_feedrate_and_scaling() {
 #endif // !HAS_SOFTWARE_ENDSTOPS
 
 FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
-  const millis_t ms = millis();
+  const millis_t ms = get_tick_ms();
   if (ELAPSED(ms, next_idle_ms)) {
     next_idle_ms = ms + 200UL;
     return marlin.idle();
@@ -1987,11 +1987,9 @@ void prepare_line_to_destination() {
     need[n] = '\0';
 
     SString<30> msg;
-    msg.setf(GET_EN_TEXT_F(MSG_HOME_FIRST), need);
     SERIAL_ECHO_START();
     msg.echoln();
 
-    ui.status_printf(0, GET_TEXT_F(MSG_HOME_FIRST), need);
     return true;
   }
 

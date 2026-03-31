@@ -25,7 +25,6 @@
 #include "../../module/temperature.h"
 #include "../../module/planner.h"       // for planner.finish_and_disable
 #include "../../module/printcounter.h"  // for print_job_timer.stop
-#include "../../lcd/marlinui.h"         // for LCD_MESSAGE_F
 
 #include "../../inc/MarlinConfig.h"
 
@@ -91,12 +90,6 @@ void GcodeSuite::M81() {
   TERN_(POWER_LOSS_RECOVERY, recovery.purge()); // Clear PLR on intentional shutdown
 
   safe_delay(1000); // Wait 1 second before switching off
-
-  #if ENABLED(CONFIGURABLE_MACHINE_NAME)
-    ui.set_status(&MString<30>(&marlin.machine_name, ' ', F(STR_OFF), '.'));
-  #else
-    LCD_MESSAGE_F(MACHINE_NAME " " STR_OFF ".");
-  #endif
 
   bool delayed_power_off = false;
 

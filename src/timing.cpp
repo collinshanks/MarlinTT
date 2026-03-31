@@ -1,6 +1,6 @@
 #include "timing.h"
 
-#include "stm32f4xx_hal.h"
+#include "stm32h7xx_hal.h"
 
 void delay_ms(unsigned int ms) {
     HAL_Delay(ms);

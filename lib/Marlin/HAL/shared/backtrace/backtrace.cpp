@@ -25,8 +25,8 @@
 #include "unwinder.h"
 #include "unwmemaccess.h"
 
-#include "../MinSerial.h"
 #include <stdarg.h>
+#include <stdio.h>
 
 // Dump a backtrace entry
 static bool UnwReportOut(void *ctx, const UnwReport *bte) {
@@ -35,11 +35,7 @@ static bool UnwReportOut(void *ctx, const UnwReport *bte) {
   (*p)++;
 
   const uint32_t a = bte->address, f = bte->function;
-  MinSerial::TX('#');    MinSerial::TXDec(*p);    MinSerial::TX(" : ");
-  MinSerial::TX(bte->name?:"unknown");            MinSerial::TX('@');   MinSerial::TXHex(f);
-  MinSerial::TX('+');    MinSerial::TXDec(a - f);
-  MinSerial::TX(" PC:"); MinSerial::TXHex(a);
-  MinSerial::TX('\n');
+  printf("#%d : %s@%p + %ld PC: %p\n", *p, bte->name ? bte->name : "unknown", (void*)f, (long)(a - f), (void*)a);
   return true;
 }
 
@@ -94,7 +90,7 @@ void backtrace_ex(unsigned long sp, unsigned long lr, unsigned long pc) {
   btf.pc = pc | 1; // Force Thumb, as CORTEX only support it
 
   // Perform a backtrace
-  MinSerial::TX("Backtrace:");
+  printf("Backtrace:");
   int ctr = 0;
   UnwindStart(&btf, &UnwCallbacks, &ctr);
 }

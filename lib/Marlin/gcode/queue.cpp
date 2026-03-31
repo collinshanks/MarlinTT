@@ -29,8 +29,6 @@ GCodeQueue queue;
 
 #include "gcode.h"
 
-#include "../lcd/marlinui.h"
-#include "../sd/cardreader.h"
 #include "../module/motion.h"
 #include "../module/planner.h"
 #include "../module/temperature.h"
@@ -277,7 +275,8 @@ void GCodeQueue::flush_and_request_resend(const serial_index_t serial_ind) {
 }
 
 static bool serial_data_available(serial_index_t index) {
-  const int a = SERIAL_IMPL.available(index);
+  // const int a = SERIAL_IMPL.available(index);
+  const int a = 0;
   #if ENABLED(RX_BUFFER_MONITOR) && RX_BUFFER_SIZE
     if (a > RX_BUFFER_SIZE - 2) {
       PORT_REDIRECT(SERIAL_PORTMASK(index));
@@ -297,7 +296,7 @@ static bool serial_data_available(serial_index_t index) {
   }
 #endif
 
-inline int read_serial(const serial_index_t index) { return SERIAL_IMPL.read(index); }
+inline int read_serial(const serial_index_t index) { return -1; }
 
 #if (defined(ARDUINO_ARCH_STM32F4) || defined(ARDUINO_ARCH_STM32)) && defined(USBCON)
 
@@ -318,7 +317,6 @@ inline int read_serial(const serial_index_t index) { return SERIAL_IMPL.read(ind
 #endif // (ARDUINO_ARCH_STM32F4 || ARDUINO_ARCH_STM32) && USBCON
 
 void GCodeQueue::gcode_line_error(FSTR_P const ferr, const serial_index_t serial_ind) {
-  PORT_REDIRECT(SERIAL_PORTMASK(serial_ind)); // Reply to the serial port that sent the command
   SERIAL_ERROR_START();
   SERIAL_ECHOLN(ferr, serial_state[serial_ind.index].last_N);
   while (read_serial(serial_ind) != -1) { /* nada */ } // Clear out the RX buffer. Why don't use flush here ?
@@ -450,7 +448,6 @@ void GCodeQueue::get_serial_commands() {
       const int c = read_serial(p);
       if (c < 0) {
         // This should never happen, let's log it
-        PORT_REDIRECT(SERIAL_PORTMASK(p));     // Reply to the serial port that sent the command
         // Crash here to get more information why it failed
         BUG_ON("SP available but read -1");
         SERIAL_ERROR_MSG(STR_ERR_SERIAL_MISMATCH);
@@ -527,9 +524,7 @@ void GCodeQueue::get_serial_commands() {
               case 0 ... 1:
               TERN_(ARC_SUPPORT, case 2 ... 3:)
               TERN_(BEZIER_CURVE_SUPPORT, case 5:)
-                PORT_REDIRECT(SERIAL_PORTMASK(p));     // Reply to the serial port that sent the command
                 SERIAL_ECHOLNPGM(STR_ERR_STOPPED);
-                LCD_MESSAGE(MSG_STOPPED);
                 break;
             }
           }

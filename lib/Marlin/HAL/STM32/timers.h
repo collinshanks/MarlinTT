@@ -22,6 +22,7 @@
 #pragma once
 
 #include "../../inc/MarlinConfig.h"
+#include "stm32h7xx_hal.h"
 
 // ------------------------
 // Defines
@@ -93,7 +94,7 @@ extern void Temp_Handler();
 // Public Variables
 // ------------------------
 
-extern HardwareTimer* timer_instance[];
+extern TIM_HandleTypeDef timer_instance[];
 
 // ------------------------
 // Public functions
@@ -110,11 +111,11 @@ void SetTimerInterruptPriorities();
 
 // FORCE_INLINE because these are used in performance-critical situations
 FORCE_INLINE bool HAL_timer_initialized(const uint8_t timer_num) {
-    return timer_instance[timer_num] != nullptr;
+    return timer_instance[timer_num].Instance != nullptr;
 }
 FORCE_INLINE static hal_timer_t HAL_timer_get_count(const uint8_t timer_num) {
     return HAL_timer_initialized(timer_num)
-               ? timer_instance[timer_num]->getCount()
+               ? __HAL_TIM_GetCounter(&timer_instance[timer_num])
                : 0;
 }
 
@@ -123,15 +124,14 @@ FORCE_INLINE static hal_timer_t HAL_timer_get_count(const uint8_t timer_num) {
 FORCE_INLINE static void HAL_timer_set_compare(const uint8_t timer_num,
                                                const hal_timer_t overflow) {
     if (HAL_timer_initialized(timer_num)) {
-        timer_instance[timer_num]->setOverflow(
-            overflow + 1, TICK_FORMAT);  // Value decremented by setOverflow()
+        timer_instance[timer_num].Instance->ARR = overflow;
+        // Value decremented by setOverflow()
         // wiki: "force all registers (Autoreload, prescaler, compare) to be
         // taken into account" So, if the new overflow value is less than the
         // count it will trigger a rollover interrupt.
-        if (overflow < timer_instance[timer_num]
-                           ->getCount())  // Added 'if' here because reports say
+        if (overflow < __HAL_TIM_GetCounter(&timer_instance[timer_num]))  // Added 'if' here because reports say
                                           // it won't boot without it
-            timer_instance[timer_num]->refresh();
+            HAL_TIM_GenerateEvent(&timer_instance[timer_num], TIM_EVENTSOURCE_UPDATE);
     }
 }
 

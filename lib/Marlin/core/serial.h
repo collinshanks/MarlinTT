@@ -59,9 +59,8 @@ enum MarlinDebugFlags : uint8_t {
                        MARLIN_DEBUG_LEVELING | MARLIN_DEBUG_MESH_ADJUST
 };
 
-#define PORT_REDIRECT(p) _PORT_REDIRECT(1, p)
-#define PORT_RESTORE() _PORT_RESTORE(1)
-#define SERIAL_PORTMASK(P) SerialMask::from(P)
+extern uint8_t marlin_debug_flags;
+#define DEBUGGING(F) (marlin_debug_flags & (MARLIN_DEBUG_## F))
 
 //
 // SERIAL_CHAR - Print one or more individual chars

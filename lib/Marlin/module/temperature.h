@@ -26,7 +26,7 @@
  */
 
 #include "thermistor/thermistors.h"
-
+#include "timing.h"
 #include "../inc/MarlinConfig.h"
 
 #if ENABLED(AUTO_POWER_CONTROL)
@@ -505,7 +505,7 @@ struct HeaterWatch {
   celsius_t target;
   millis_t next_ms;
   inline bool elapsed(const millis_t &ms) { return next_ms && ELAPSED(ms, next_ms); }
-  inline bool elapsed() { return elapsed(millis()); }
+  inline bool elapsed() { return elapsed(get_tick_ms()); }
 
   inline bool check(const celsius_t curr) { return curr >= target; }
 
@@ -514,7 +514,7 @@ struct HeaterWatch {
       const celsius_t newtarget = curr + INCREASE;
       if (newtarget < tgt - HYSTERESIS - 1) {
         target = newtarget;
-        next_ms = millis() + SEC_TO_MS(PERIOD);
+        next_ms = get_tick_ms() + SEC_TO_MS(PERIOD);
         return;
       }
     }

@@ -50,9 +50,13 @@
   You will get a crash report in all other cases.
 */
 
+#include "core/macros.h"
+#include <stdint.h>
 #include "exception_hook.h"
 #include "../backtrace/backtrace.h"
-#include "../MinSerial.h"
+#include "timing.h"
+#include "core/millis_t.h"
+#include <stdio.h>
 
 #define HW_REG(X)  (*((volatile unsigned long *)(X)))
 
@@ -170,43 +174,24 @@ static uint8_t           lastCause;
 bool resume_from_fault() {
   static const char* causestr[] = { "Thread", "Rsvd", "NMI", "Hard", "Mem", "Bus", "Usage", "7", "8", "9", "10", "SVC", "Dbg", "13", "PendSV", "SysTk", "IRQ" };
   // Reinit the serial link (might only work if implemented in each of your boards)
-  MinSerial::init();
-
-  MinSerial::TX("\n\n## Software Fault detected ##\n");
-  MinSerial::TX("Cause: "); MinSerial::TX(causestr[min(lastCause, (uint8_t)16)]); MinSerial::TX('\n');
-
-  MinSerial::TX("R0   : "); MinSerial::TXHex(savedFrame.R0);   MinSerial::TX('\n');
-  MinSerial::TX("R1   : "); MinSerial::TXHex(savedFrame.R1);   MinSerial::TX('\n');
-  MinSerial::TX("R2   : "); MinSerial::TXHex(savedFrame.R2);   MinSerial::TX('\n');
-  MinSerial::TX("R3   : "); MinSerial::TXHex(savedFrame.R3);   MinSerial::TX('\n');
-  MinSerial::TX("R12  : "); MinSerial::TXHex(savedFrame.R12);  MinSerial::TX('\n');
-  MinSerial::TX("LR   : "); MinSerial::TXHex(savedFrame.LR);   MinSerial::TX('\n');
-  MinSerial::TX("PC   : "); MinSerial::TXHex(savedFrame.PC);   MinSerial::TX('\n');
-  MinSerial::TX("PSR  : "); MinSerial::TXHex(savedFrame.XPSR); MinSerial::TX('\n');
-
-  // Configurable Fault Status Register
-  // Consists of MMSR, BFSR and UFSR
-  MinSerial::TX("CFSR : "); MinSerial::TXHex(savedFrame.CFSR); MinSerial::TX('\n');
-
-  // Hard Fault Status Register
-  MinSerial::TX("HFSR : "); MinSerial::TXHex(savedFrame.HFSR); MinSerial::TX('\n');
-
-  // Debug Fault Status Register
-  MinSerial::TX("DFSR : "); MinSerial::TXHex(savedFrame.DFSR); MinSerial::TX('\n');
-
-  // Auxiliary Fault Status Register
-  MinSerial::TX("AFSR : "); MinSerial::TXHex(savedFrame.AFSR); MinSerial::TX('\n');
-
-  // Read the Fault Address Registers. These may not contain valid values.
-  // Check BFARVALID/MMARVALID to see if they are valid values
-  // MemManage Fault Address Register
-  MinSerial::TX("MMAR : "); MinSerial::TXHex(savedFrame.MMAR); MinSerial::TX('\n');
-
-  // Bus Fault Address Register
-  MinSerial::TX("BFAR : "); MinSerial::TXHex(savedFrame.BFAR); MinSerial::TX('\n');
-
-  MinSerial::TX("ExcLR: "); MinSerial::TXHex(savedFrame.ELR); MinSerial::TX('\n');
-  MinSerial::TX("ExcSP: "); MinSerial::TXHex(savedFrame.ESP); MinSerial::TX('\n');
+  printf("\n\n## Software Fault detected ##\n");
+  printf("Cause: %s\n", causestr[lastCause < 16 ? lastCause : (uint8_t)16]);
+  printf("R0   : %08lX\n", savedFrame.R0);
+  printf("R1   : %08lX\n", savedFrame.R1);
+  printf("R2   : %08lX\n", savedFrame.R2);
+  printf("R3   : %08lX\n", savedFrame.R3);
+  printf("R12  : %08lX\n", savedFrame.R12);
+  printf("LR   : %08lX\n", savedFrame.LR);
+  printf("PC   : %08lX\n", savedFrame.PC);
+  printf("PSR  : %08lX\n", savedFrame.XPSR);
+  printf("CFSR : %08lX\n", savedFrame.CFSR);
+  printf("HFSR : %08lX\n", savedFrame.HFSR);
+  printf("DFSR : %08lX\n", savedFrame.DFSR);
+  printf("AFSR : %08lX\n", savedFrame.AFSR);
+  printf("MMAR : %08lX\n", savedFrame.MMAR);
+  printf("BFAR : %08lX\n", savedFrame.BFAR);
+  printf("ExcLR: %08lX\n", savedFrame.ELR);
+  printf("ExcSP: %08lX\n", savedFrame.ESP);
 
   // The stack pointer is pushed by 8 words upon entering an exception, so we need to revert this
   backtrace_ex(savedFrame.ESP + 8*4, savedFrame.LR, savedFrame.PC);
@@ -214,15 +199,12 @@ bool resume_from_fault() {
   // Call the last resort function here
   hook_last_resort_func();
 
-  const uint32_t start = millis(), end = start + 100; // 100ms should be enough
+  const uint32_t start = get_tick_ms(), end = start + 100; // 100ms should be enough
   // We need to wait for the serial buffers to be output but we don't know for how long
   // So we'll just need to refresh the watchdog for a while and then stop for the system to reboot
   uint32_t last = start;
   while (PENDING(last, end)) {
-    hal.watchdog_refresh();
-    while (millis() == last) { /* nada */ }
-    last = millis();
-    MinSerial::TX('.');
+    last = get_tick_ms();
   }
 
   // Reset now by reinstantiating the bootloader's vector table
@@ -281,12 +263,10 @@ void CommonHandler_C(ContextStateFrame * frame, unsigned long lr, unsigned long 
     frame->pc = (uint32_t)resume_from_fault; // Patch where to return to
     frame->lr = 0xDEADBEEF;  // If our handler returns (it shouldn't), let's make it trigger an exception immediately
     frame->xpsr = _BV(24);   // Need to clean the PSR register to thumb II only
-    MinSerial::force_using_default_output = true;
     return; // The CPU will resume in our handler hopefully, and we'll try to use default serial output
   }
 
   // Sorry, we need to emergency code here since the fault is too dangerous to recover from
-  MinSerial::force_using_default_output = false;
   resume_from_fault();
 }
 
