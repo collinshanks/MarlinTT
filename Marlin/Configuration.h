@@ -988,8 +988,10 @@
 // Enable for TrimBot Kinematics
 #define TRIMBOT
 #if ENABLED(TRIMBOT)
-  #define DIST_TT_BASE  304.8 // (mm) Distance from center of turn table to gantry base
-  #define DIST_ROT_TRIM 30    // (mm) Distance from center of B axis rotation to trimmer tip
+  #define DIST_TT_BASE 317.5  // (mm) Distance from center of turn table to gantry base
+  #define DIST_REV_Y 152.4    // (mm) Horizontal Distance from center of A axis rotation to trimmer tip
+  #define DIST_REV_Z 45       // (mm) Vertical Distance from center of A axis rotation to trimmer tip
+  #define DIST_TT_GANTRY 868  // (mm) Distance from turntable to top of gantry z = 0 
 #endif
 
 //
